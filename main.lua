@@ -1,4 +1,9 @@
+require "globals"
+
 local Array2d = require "class/array2d"
+local Rock = require "rock"
+
+local rocks
 
 function love.load()
 
@@ -10,9 +15,6 @@ function love.load()
 
   bullets = 10
 
-  array = Array2d()
-  randBrick()
-
   hearts = 5
   level = 1
   positionX = 200
@@ -21,6 +23,7 @@ function love.load()
   userX = 200
   userY = 200
 
+  randBricks()
 
   playerTRL = love.graphics.newImage("visuals/player_top_rl.png")
 
@@ -52,6 +55,29 @@ function love.load()
   --array:get(x, y)
 end
 
+function randBricks()
+  rocks = {}
+  local rockAmount = 10
+  local counter = 1
+  while counter <= rockAmount do
+    local x = math.random(80, love.graphics.getWidth() - 420)
+    local y = math.random(80, love.graphics.getHeight() - 200)
+    local rock = Rock(x, y)
+    local continue = false
+    for _, r in pairs(rocks) do
+      if r:collidesWith(rock) then
+        print("new rock collides with existing one, going into next loop")
+        continue = true
+        break
+      end
+    end
+    if not continue then
+      table.insert(rocks, rock)
+      counter = counter + 1
+    end
+  end
+end
+
 function love.draw()
 
   love.graphics.draw(background, 0, 0, 0)
@@ -59,14 +85,8 @@ function love.draw()
   love.graphics.print("Level " .. level, love.graphics.getWidth() - 220, 20)
   love.graphics.print("Bullets  " .. bullets, love.graphics.getWidth() - 220, 35)
 
-  for i, row in array:iterRows() do
-    --love.graphics.rectangle("fill", row[1],row[2], 20, 20)
-    love.graphics.draw(rock, row[1], row[2], 0, 0.7, 0.7)
-
-    if shooting_x == row[1] then
-      shooting = false
-    end
-
+  for _, rock in pairs(rocks) do
+    rock:draw()
   end
 
   for i = 1, hearts do
@@ -113,14 +133,6 @@ end
     end
   end
 
-end
-
-
-function randBrick()
-  for i = 1, math.random(0, 10) do
-    array:set(i, 1, math.random(80, love.graphics.getWidth() - 420))
-    array:set(i, 2, math.random(80, love.graphics.getHeight() - 200))
-  end
 end
 
 function shoot(dir, xdir, ydir)
@@ -197,7 +209,7 @@ function love.update(dt)
   end
 
   if love.keyboard.isDown("escape") then
-    randBrick()
+    randBricks()
   end
   if love.keyboard.isDown("r") then
     love.event.quit("restart")
@@ -223,6 +235,10 @@ function love.update(dt)
     love.event.quit()
   end
 
-
+  for _, rock in pairs(rocks) do
+    if shooting_x == rock.x then
+      shooting = false
+    end
+  end
 
 end
